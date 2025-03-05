@@ -3,176 +3,109 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gasolina</title>
+    <title>GASTOS COMUNES</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            margin: 0;
-            background-color: #ffffff;
-            color: #000000;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-        }
-        .container {
-            background: #f9f9f9;
-            padding: 20px;
-            border-radius: 10px;
-            display: inline-block;
-            width: 80%;
-            max-width: 600px;
-            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-        }
-        input {
-            width: 100%;
-            margin: 10px 0;
-            padding: 10px;
-            font-size: 16px;
-            text-align: center;
-            background: #e0e0e0;
-            color: #000;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-        .resultado {
-            font-size: 24px;
-            font-weight: bold;
-            margin-top: 20px;
-        }
-        .historial {
-            margin-top: 20px;
-            text-align: left;
-            background: #f5f5f5;
-            padding: 15px;
-            border-radius: 10px;
-            width: 80%;
-            max-width: 600px;
-            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-            max-height: 200px;
-            overflow-y: auto;
-        }
-        button {
-            margin-top: 10px;
-            padding: 10px;
-            font-size: 16px;
-            cursor: pointer;
-            background: #d9d9d9;
-            color: #000;
-            border: none;
-            border-radius: 5px;
-            width: 100%;
-            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
-        }
-        button:hover {
-            background: #cfcfcf;
-        }
-        .eliminar {
-            font-size: 12px;
-            color: red;
-            cursor: pointer;
-            background: none;
-            border: none;
-        }
-        .fecha {
-            font-size: 12px;
-            color: #888;
-            margin-left: 10px;
-        }
+        /* Estilos omitidos para brevedad */
     </style>
 </head>
 <body>
     <div class="container">
-        <h2>Gasolina</h2>
-        <label>Ingresa el valor de la gasolina:</label>
-        <input type="text" id="gasolina" placeholder="Ej: 50,55 o 50.55" onkeypress="agregarValor(event)">
-        <div class="resultado">Total: <span id="total">0</span> €</div>
-        <button onclick="mostrarHistorial()">Historial</button>
-        <button onclick="resetearHistorial()">Resetear</button>
+        <h2>GASTOS</h2>
+        <label>Gasolina:</label>
+        <input type="text" id="gasolina" placeholder="Ej: 50,63" onkeypress="agregarGasolina(event)">
+        <div class="resultado">Total Gasolina: <span id="totalGasolina">0,00</span> €</div>
+        <button onclick="mostrarHistorialGasolina()">Mostrar Historial Gasolina</button>
+        <button onclick="resetearHistorialGasolina()">Resetear Gasolina</button>
     </div>
-    <div class="historial" id="historial"></div>
+    <div class="historial" id="historialGasolina"></div>
 
     <script>
-        let total = 0;
-        let historial = [];
+        // Clave única para almacenar datos de gasolina
+        const storageKeyGasolina = 'gastos_gasolina';
 
-        // Función para agregar valor a la lista y actualizar el total
-        function agregarValor(event) {
+        let totalCentimosGasolina = 0;
+        let historialGasolina = [];
+
+        // Función para cargar datos de gasolina desde localStorage
+        function cargarDatosGasolina() {
+            const datosGuardadosGasolina = localStorage.getItem(storageKeyGasolina);
+            if (datosGuardadosGasolina) {
+                const { total, historial } = JSON.parse(datosGuardadosGasolina);
+                totalCentimosGasolina = total;
+                historialGasolina = historial;
+            }
+        }
+
+        // Función para guardar datos de gasolina en localStorage
+        function guardarDatosGasolina() {
+            const datos = { total: totalCentimosGasolina, historial: historialGasolina };
+            localStorage.setItem(storageKeyGasolina, JSON.stringify(datos));
+        }
+
+        function agregarGasolina(event) {
             if (event.key === 'Enter') {
                 let input = document.getElementById('gasolina');
-                let valor = input.value.trim();
+                let valor = input.value.trim().replace(',', '.');
 
-                // Reemplazar la coma por punto
-                valor = valor.replace(',', '.');
+                if (validarEntrada(valor)) {
+                    let centimos = Math.round(parseFloat(valor) * 100);
+                    totalCentimosGasolina += centimos;
+                    actualizarTotalGasolina();
 
-                // Validar que el valor sea un formato correcto (euros y céntimos con punto)
-                let regex = /^(\d+)\.(\d{1,2})$/;
-                let match = valor.match(regex);
-
-                if (match) {
-                    // Extraer euros y céntimos
-                    let euros = parseFloat(match[1]);
-                    let centimos = parseFloat(match[2]);
-
-                    // Convertir todo a euros
-                    let valorTotal = euros + centimos / 100;
-
-                    total += valorTotal;
-                    document.getElementById('total').textContent = total.toFixed(2); // Muestra con dos decimales
-                    
-                    // Agregar al historial con la fecha y hora
-                    let fecha = new Date();
-                    let fechaFormateada = `${fecha.getDate()}/${fecha.getMonth() + 1}/${fecha.getFullYear()} ${fecha.getHours()}:${fecha.getMinutes()}:${fecha.getSeconds()}`;
-                    
-                    historial.push({
-                        descripcion: `Gasolina: ${valor} €`,
-                        fecha: fechaFormateada
-                    });
+                    let fecha = new Date().toLocaleString();
+                    historialGasolina.push({ descripcion: `Gasolina: ${valor} €`, centimos: centimos, fecha: fecha });
 
                     input.value = "";
+                    guardarDatosGasolina(); // Guardar datos después de cada modificación
                 } else {
-                    alert("Por favor, ingresa el valor en formato correcto: euros.centimos (Ej: 50.55)");
+                    alert("Por favor, ingresa un valor válido (Ej: 55,63 o 40.75)");
+                    input.value = "";
                 }
             }
         }
 
-        // Función para mostrar el historial
-        function mostrarHistorial() {
-            let historialDiv = document.getElementById('historial');
-            historialDiv.innerHTML = historial.map(entry => 
+        function validarEntrada(valor) {
+            return !isNaN(valor) && parseFloat(valor) >= 0;
+        }
+
+        function actualizarTotalGasolina() {
+            let euros = Math.floor(totalCentimosGasolina / 100);
+            let centimos = totalCentimosGasolina % 100;
+            document.getElementById('totalGasolina').textContent = `${euros},${centimos.toString().padStart(2, '0')}`;
+        }
+
+        function mostrarHistorialGasolina() {
+            let historialDiv = document.getElementById('historialGasolina');
+            historialDiv.innerHTML = historialGasolina.map((entry, index) => 
                 `<p>${entry.descripcion} <span class="fecha">(${entry.fecha})</span> 
-                    <button class="eliminar" onclick="eliminarEntrada('${entry.descripcion}')">Eliminar</button>
+                    <button class="eliminar" onclick="eliminarEntradaGasolina(${index})">Eliminar</button>
                 </p>`
             ).join('');
         }
 
-        // Función para eliminar una entrada del historial
-        function eliminarEntrada(entryDescripcion) {
-            let index = historial.findIndex(entry => entry.descripcion === entryDescripcion);
-            if (index !== -1) {
-                historial.splice(index, 1);
-                // Extraer el valor de la entrada eliminada
-                let valor = entryDescripcion.replace(/^Gasolina: /, "").replace(" €", "");
-                let match = valor.match(/^(\d+)\.(\d{1,2})$/);
-                if (match) {
-                    let euros = parseFloat(match[1]);
-                    let centimos = parseFloat(match[2]);
-                    let valorTotal = euros + centimos / 100;
-                    total -= valorTotal;
-                    document.getElementById('total').textContent = total.toFixed(2);
-                }
-                mostrarHistorial();
+        function eliminarEntradaGasolina(index) {
+            totalCentimosGasolina -= historialGasolina[index].centimos;
+            historialGasolina.splice(index, 1);
+            actualizarTotalGasolina();
+            mostrarHistorialGasolina();
+            guardarDatosGasolina(); // Guardar datos después de cada modificación
+        }
+
+        function resetearHistorialGasolina() {
+            if (confirm("¿Estás seguro de que deseas resetear el historial de gasolina?")) {
+                historialGasolina = [];
+                totalCentimosGasolina = 0;
+                actualizarTotalGasolina();
+                document.getElementById('historialGasolina').innerHTML = "";
+                localStorage.removeItem(storageKeyGasolina);
             }
         }
 
-        // Función para resetear el historial y el total
-        function resetearHistorial() {
-            historial = [];
-            total = 0;
-            document.getElementById('total').textContent = total.toFixed(2);
-            document.getElementById('historial').innerHTML = "";
+        // Cargar datos de gasolina al iniciar la página
+        window.onload = function() {
+            cargarDatosGasolina();
+            actualizarTotalGasolina();
+            mostrarHistorialGasolina();
         }
     </script>
 </body>
