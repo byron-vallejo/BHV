@@ -87,116 +87,106 @@
     <div class="container">
         <h2>Obra 1</h2>
         <label>Material:</label>
-        <input type="text" id="num1" placeholder="Ej: 50,63" onkeypress="agregarValor(event, 'num1')">
+        <input type="text" id="material" placeholder="Ej: 50,63" onkeypress="agregarValor(event, 'Material')">
         <label>Mano de Obra:</label>
-        <input type="text" id="num2" placeholder="Ej: 40,75" onkeypress="agregarValor(event, 'num2')">
+        <input type="text" id="manoObra" placeholder="Ej: 40,75" onkeypress="agregarValor(event, 'Mano de Obra')">
         <label>Otros:</label>
-        <input type="text" id="num3" placeholder="Ej: 30,45" onkeypress="agregarValor(event, 'num3')">
-        <div class="resultado">Total: <span id="total">0.00</span></div>
-        <button onclick="mostrarHistorial()">Historial</button>
+        <input type="text" id="otros" placeholder="Ej: 30,45" onkeypress="agregarValor(event, 'Otros')">
+        <div class="resultado">Total: <span id="total">0,00</span> €</div>
+        <button onclick="mostrarHistorial()">Mostrar Historial</button>
         <button onclick="resetearHistorial()">Resetear</button>
     </div>
     <div class="historial" id="historial"></div>
 
     <script>
-        let totalEuros = 0;
         let totalCentimos = 0;
         let historial = [];
 
-        // Función para agregar valor a la lista y actualizar el total
+        // Función para cargar datos desde localStorage
+        function cargarDatos() {
+            const totalGuardado = localStorage.getItem('totalCentimos');
+            const historialGuardado = localStorage.getItem('historial');
+
+            if (totalGuardado !== null) {
+                totalCentimos = parseInt(totalGuardado, 10);
+            }
+
+            if (historialGuardado !== null) {
+                historial = JSON.parse(historialGuardado);
+            }
+        }
+
+        // Función para guardar datos en localStorage
+        function guardarDatos() {
+            localStorage.setItem('totalCentimos', totalCentimos.toString());
+            localStorage.setItem('historial', JSON.stringify(historial));
+        }
+
         function agregarValor(event, id) {
             if (event.key === 'Enter') {
                 let input = document.getElementById(id);
-                let valor = input.value.trim();
-                
-                // Validar que el valor contenga ',' o '.' y separar en euros y céntimos
-                if (valor.match(/[\d]+[,\.][\d]{1,2}/)) {
-                    let [euros, centimos] = valor.split(/[,\.]/);
-                    euros = parseInt(euros.trim());
-                    centimos = parseInt(centimos.trim());
+                let valor = input.value.trim().replace(',', '.');
 
-                    // Validar que los valores sean correctos
-                    if (isNaN(euros) || isNaN(centimos)) {
-                        alert("Por favor, ingresa un valor válido (Ej: 55,63 o 40.75)");
-                        input.value = "";
-                        return;
-                    }
-
-                    // Sumar a los totales, se guardan los centimos como enteros para mayor precisión
-                    totalEuros += euros;
+                if (validarEntrada(valor)) {
+                    let centimos = Math.round(parseFloat(valor) * 100);
                     totalCentimos += centimos;
+                    actualizarTotal();
 
-                    // Si los céntimos son 100 o más, convertir a euros
-                    if (totalCentimos >= 100) {
-                        totalEuros += Math.floor(totalCentimos / 100);
-                        totalCentimos = totalCentimos % 100;
-                    }
+                    let fecha = new Date().toLocaleString();
+                    historial.push({ descripcion: `${id}: ${valor} €`, centimos: centimos, fecha: fecha });
 
-                    // Mostrar el total en formato correcto
-                    document.getElementById('total').textContent = `${totalEuros},${totalCentimos.toString().padStart(2, '0')}`;
-                    
-                    // Agregar la fecha actual al historial
-                    let fecha = new Date();
-                    let fechaFormateada = `${fecha.getDate()}/${fecha.getMonth() + 1}/${fecha.getFullYear()} ${fecha.getHours()}:${fecha.getMinutes()}:${fecha.getSeconds()}`;
-                    
-                    // Registrar la entrada en el historial
-                    historial.push({
-                        descripcion: `${input.previousElementSibling.textContent} ${valor}`,
-                        fecha: fechaFormateada
-                    });
-
-                    input.value = ""; // Limpiar el input
+                    input.value = "";
+                    guardarDatos(); // Guardar datos después de cada modificación
                 } else {
-                    alert("Por favor, ingresa un formato válido como '55,63' o '40.75'");
-                    input.value = ""; // Limpiar el input
+                    alert("Por favor, ingresa un valor válido (Ej: 55,63 o 40.75)");
+                    input.value = "";
                 }
             }
         }
 
-        // Función para mostrar el historial
+        function validarEntrada(valor) {
+            return !isNaN(valor) && parseFloat(valor) >= 0;
+        }
+
+        function actualizarTotal() {
+            let euros = Math.floor(totalCentimos / 100);
+            let centimos = totalCentimos % 100;
+            document.getElementById('total').textContent = `${euros},${centimos.toString().padStart(2, '0')}`;
+        }
+
         function mostrarHistorial() {
             let historialDiv = document.getElementById('historial');
-            historialDiv.innerHTML = historial.map(entry => 
+            historialDiv.innerHTML = historial.map((entry, index) => 
                 `<p>${entry.descripcion} <span class="fecha">(${entry.fecha})</span> 
-                    <button class="eliminar" onclick="eliminarEntrada('${entry.descripcion}')">Eliminar</button>
+                    <button class="eliminar" onclick="eliminarEntrada(${index})">Eliminar</button>
                 </p>`
             ).join('');
         }
 
-        // Función para eliminar una entrada del historial
-        function eliminarEntrada(entryDescripcion) {
-            let index = historial.findIndex(entry => entry.descripcion === entryDescripcion);
-            if (index !== -1) {
-                historial.splice(index, 1);
+        function eliminarEntrada(index) {
+            totalCentimos -= historial[index].centimos;
+            historial.splice(index, 1);
+            actualizarTotal();
+            mostrarHistorial();
+            guardarDatos(); // Guardar datos después de cada modificación
+        }
 
-                // Actualizar los totales después de eliminar la entrada
-                let valor = entryDescripcion.split(' ')[2];
-                let [euros, centimos] = valor.split(/[,\.]/);
-                euros = parseInt(euros.trim());
-                centimos = parseInt(centimos.trim());
-
-                totalEuros -= euros;
-                totalCentimos -= centimos;
-
-                // Si los céntimos son negativos después de la resta, ajustar los euros
-                if (totalCentimos < 0) {
-                    totalEuros -= 1;
-                    totalCentimos = 100 + totalCentimos;
-                }
-
-                // Actualizar el total
-                document.getElementById('total').textContent = `${totalEuros},${totalCentimos.toString().padStart(2, '0')}`;
-                mostrarHistorial();
+        function resetearHistorial() {
+            if (confirm("¿Estás seguro de que deseas resetear el historial?")) {
+                historial = [];
+                totalCentimos = 0;
+                actualizarTotal();
+                document.getElementById('historial').innerHTML = "";
+                localStorage.removeItem('totalCentimos');
+                localStorage.removeItem('historial');
             }
         }
 
-        // Función para resetear el historial y el total
-        function resetearHistorial() {
-            historial = [];
-            totalEuros = 0;
-            totalCentimos = 0;
-            document.getElementById('total').textContent = "0,00";
-            document.getElementById('historial').innerHTML = "";
+        // Cargar datos al iniciar la página
+        window.onload = function() {
+            cargarDatos();
+            actualizarTotal();
+            mostrarHistorial();
         }
     </script>
 </body>
