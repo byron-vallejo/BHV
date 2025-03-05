@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Obra 3</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            background-color: #ffffff;
+            color: #000000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+        .container {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 10px;
+            display: inline-block;
+            width: 80%;
+            max-width: 600px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        input {
+            width: 100%;
+            margin: 10px 0;
+            padding: 10px;
+            font-size: 16px;
+            text-align: center;
+            background: #e0e0e0;
+            color: #000;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .resultado {
+            font-size: 24px;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+        .historial {
+            margin-top: 20px;
+            text-align: left;
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 10px;
+            width: 80%;
+            max-width: 600px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        button {
+            margin-top: 10px;
+            padding: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            background: #d9d9d9;
+            color: #000;
+            border: none;
+            border-radius: 5px;
+            width: 100%;
+            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        button:hover {
+            background: #cfcfcf;
+        }
+        .eliminar {
+            font-size: 12px;
+            color: red;
+            cursor: pointer;
+            background: none;
+            border: none;
+        }
+        .fecha {
+            font-size: 12px;
+            color: #888;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Obra 3</h2>
+        <label>Material:</label>
+        <input type="text" id="num1" placeholder="Ej: 50,63" onkeypress="agregarValor(event, 'num1')">
+        <label>Mano de Obra:</label>
+        <input type="text" id="num2" placeholder="Ej: 40,75" onkeypress="agregarValor(event, 'num2')">
+        <label>Otros:</label>
+        <input type="text" id="num3" placeholder="Ej: 30,45" onkeypress="agregarValor(event, 'num3')">
+        <div class="resultado">Total: <span id="total">0.00</span></div>
+        <button onclick="mostrarHistorial()">Historial</button>
+        <button onclick="resetearHistorial()">Resetear</button>
+    </div>
+    <div class="historial" id="historial"></div>
+
+    <script>
+        let totalEuros = 0;
+        let totalCentimos = 0;
+        let historial = [];
+
+        // Función para agregar valor a la lista y actualizar el total
+        function agregarValor(event, id) {
+            if (event.key === 'Enter') {
+                let input = document.getElementById(id);
+                let valor = input.value.trim();
+                
+                // Validar que el valor contenga ',' o '.' y separar en euros y céntimos
+                if (valor.match(/[\d]+[,\.][\d]{1,2}/)) {
+                    let [euros, centimos] = valor.split(/[,\.]/);
+                    euros = parseInt(euros.trim());
+                    centimos = parseInt(centimos.trim());
+
+                    // Validar que los valores sean correctos
+                    if (isNaN(euros) || isNaN(centimos)) {
+                        alert("Por favor, ingresa un valor válido (Ej: 55,63 o 40.75)");
+                        input.value = "";
+                        return;
+                    }
+
+                    // Sumar a los totales, se guardan los centimos como enteros para mayor precisión
+                    totalEuros += euros;
+                    totalCentimos += centimos;
+
+                    // Si los céntimos son 100 o más, convertir a euros
+                    if (totalCentimos >= 100) {
+                        totalEuros += Math.floor(totalCentimos / 100);
+                        totalCentimos = totalCentimos % 100;
+                    }
+
+                    // Mostrar el total en formato correcto
+                    document.getElementById('total').textContent = `${totalEuros},${totalCentimos.toString().padStart(2, '0')}`;
+                    
+                    // Agregar la fecha actual al historial
+                    let fecha = new Date();
+                    let fechaFormateada = `${fecha.getDate()}/${fecha.getMonth() + 1}/${fecha.getFullYear()} ${fecha.getHours()}:${fecha.getMinutes()}:${fecha.getSeconds()}`;
+                    
+                    // Registrar la entrada en el historial
+                    historial.push({
+                        descripcion: `${input.previousElementSibling.textContent} ${valor}`,
+                        fecha: fechaFormateada
+                    });
+
+                    input.value = ""; // Limpiar el input
+                } else {
+                    alert("Por favor, ingresa un formato válido como '55,63' o '40.75'");
+                    input.value = ""; // Limpiar el input
+                }
+            }
+        }
+
+        // Función para mostrar el historial
+        function mostrarHistorial() {
+            let historialDiv = document.getElementById('historial');
+            historialDiv.innerHTML = historial.map(entry => 
+                `<p>${entry.descripcion} <span class="fecha">(${entry.fecha})</span> 
+                    <button class="eliminar" onclick="eliminarEntrada('${entry.descripcion}')">Eliminar</button>
+                </p>`
+            ).join('');
+        }
+
+        // Función para eliminar una entrada del historial
+        function eliminarEntrada(entryDescripcion) {
+            let index = historial.findIndex(entry => entry.descripcion === entryDescripcion);
+            if (index !== -1) {
+                historial.splice(index, 1);
+
+                // Actualizar los totales después de eliminar la entrada
+                let valor = entryDescripcion.split(' ')[2];
+                let [euros, centimos] = valor.split(/[,\.]/);
+                euros = parseInt(euros.trim());
+                centimos = parseInt(centimos.trim());
+
+                totalEuros -= euros;
+                totalCentimos -= centimos;
+
+                // Si los céntimos son negativos después de la resta, ajustar los euros
+                if (totalCentimos < 0) {
+                    totalEuros -= 1;
+                    totalCentimos = 100 + totalCentimos;
+                }
+
+                // Actualizar el total
+                document.getElementById('total').textContent = `${totalEuros},${totalCentimos.toString().padStart(2, '0')}`;
+                mostrarHistorial();
+            }
+        }
+
+        // Función para resetear el historial y el total
+        function resetearHistorial() {
+            historial = [];
+            totalEuros = 0;
+            totalCentimos = 0;
+            document.getElementById('total').textContent = "0,00";
+            document.getElementById('historial').innerHTML = "";
+        }
+    </script>
+</body>
+</html>
