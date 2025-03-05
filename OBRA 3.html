@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Obra 3</title>
+    <title>Obra 1</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -84,7 +84,7 @@
     </style>
     <body>
         <div class="container">
-            <h2>Obra 3</h2>
+            <h2>Obra 1</h2>
             <label>Material:</label>
             <input type="text" id="material" placeholder="Ej: 50,63" onkeypress="agregarValor(event, 'material')">
             <label>Mano de Obra:</label>
@@ -99,95 +99,76 @@
         <script>
             let totalCentimos = 0;
             let historial = [];
-                    
-            
-            // Función para cargar datos desde localStorage
-            
             function cargarDatos() {
-            const totalGuardado = localStorage.getItem('totalCentimos');
-            const historialGuardado = localStorage.getItem('historial');
-
-            if (totalGuardado !== null) {
-                totalCentimos = parseInt(totalGuardado, 10);
-            }
-
-            if (historialGuardado !== null) {
-                historial = JSON.parse(historialGuardado);
-            }
-        }
-
-        // Función para guardar datos en localStorage
-        function guardarDatos() {
-            localStorage.setItem('totalCentimos', totalCentimos.toString());
-            localStorage.setItem('historial', JSON.stringify(historial));
-        }
-
-        function agregarValor(event, id) {
-            if (event.key === 'Enter') {
-                let input = document.getElementById(id);
-                let valor = input.value.trim().replace(',', '.');
-
-                if (validarEntrada(valor)) {
-                    let centimos = Math.round(parseFloat(valor) * 100);
-                    totalCentimos += centimos;
-                    actualizarTotal();
-
-                    let fecha = new Date().toLocaleString();
-                    historial.push({ descripcion: `${id}: ${valor} €`, centimos: centimos, fecha: fecha });
-
-                    input.value = "";
-                    guardarDatos(); // Guardar datos después de cada modificación
-                } else {
-                    alert("Por favor, ingresa un valor válido (Ej: 55,63 o 40.75)");
-                    input.value = "";
+                const totalGuardado = localStorage.getItem('totalCentimos');
+                const historialGuardado = localStorage.getItem('historial');
+                if (totalGuardado !== null) {
+                    totalCentimos = parseInt(totalGuardado, 10);
+                }
+                if (historialGuardado !== null) {
+                    historial = JSON.parse(historialGuardado);
                 }
             }
-        }
-
-        function validarEntrada(valor) {
-            return !isNaN(valor) && parseFloat(valor) >= 0;
-        }
-
-        function actualizarTotal() {
-            let euros = Math.floor(totalCentimos / 100);
-            let centimos = totalCentimos % 100;
-            document.getElementById('total').textContent = `${euros},${centimos.toString().padStart(2, '0')}`;
-        }
-
-        function mostrarHistorial() {
-            let historialDiv = document.getElementById('historial');
-            historialDiv.innerHTML = historial.map((entry, index) => 
-                `<p>${entry.descripcion} <span class="fecha">(${entry.fecha})</span> 
-                    <button class="eliminar" onclick="eliminarEntrada(${index})">Eliminar</button>
-                </p>`
-            ).join('');
-        }
-
-        function eliminarEntrada(index) {
-            totalCentimos -= historial[index].centimos;
-            historial.splice(index, 1);
-            actualizarTotal();
-            mostrarHistorial();
-            guardarDatos(); // Guardar datos después de cada modificación
-        }
-
-        function resetearHistorial() {
-            if (confirm("¿Estás seguro de que deseas resetear el historial?")) {
-                historial = [];
-                totalCentimos = 0;
-                actualizarTotal();
-                document.getElementById('historial').innerHTML = "";
-                localStorage.removeItem('totalCentimos');
-                localStorage.removeItem('historial');
+            function guardarDatos() {
+                localStorage.setItem('totalCentimos', totalCentimos.toString());
+                localStorage.setItem('historial', JSON.stringify(historial));
             }
-        }
-
-        // Cargar datos al iniciar la página
-        window.onload = function() {
-            cargarDatos();
-            actualizarTotal();
-            mostrarHistorial();
-        }
-    </script>
-</body>
+            function agregarValor(event, id) {
+                if (event.key === 'Enter') {
+                    let input = document.getElementById(id);
+                    let valor = input.value.trim().replace(',', '.');
+                    if (validarEntrada(valor)) {
+                        let centimos = Math.round(parseFloat(valor) * 100);
+                        totalCentimos += centimos;
+                        actualizarTotal();
+                        let fecha = new Date().toLocaleString();
+                        historial.push({ descripcion: `${id}: ${valor} €`, centimos: centimos, fecha: fecha });
+                        input.value = "";
+                        guardarDatos(); // Guardar datos después de cada modificación
+                    } else {
+                        alert("Por favor, ingresa un valor válido (Ej: 55,63 o 40.75)");
+                        input.value = "";
+                    }
+                }
+            }
+            function validarEntrada(valor) {
+                return !isNaN(valor) && parseFloat(valor) >= 0;
+            }
+            function actualizarTotal() {
+                let euros = Math.floor(totalCentimos / 100);
+                let centimos = totalCentimos % 100;
+                document.getElementById('total').textContent = `${euros},${centimos.toString().padStart(2, '0')}`;
+            }
+            function mostrarHistorial() {
+                let historialDiv = document.getElementById('historial');
+                historialDiv.innerHTML = historial.map((entry, index) => 
+                    `<p>${entry.descripcion} <span class="fecha">(${entry.fecha})</span> 
+                    <button class="eliminar" onclick="eliminarEntrada(${index})">Eliminar</button>
+                    </p>`
+                                                      ).join('');
+            }
+            function eliminarEntrada(index) {
+                totalCentimos -= historial[index].centimos;
+                historial.splice(index, 1);
+                actualizarTotal();
+                mostrarHistorial();
+                guardarDatos(); // Guardar datos después de cada modificación
+            }
+            function resetearHistorial() {
+                if (confirm("¿Estás seguro de que deseas resetear el historial?")) {
+                    historial = [];
+                    totalCentimos = 0;
+                    actualizarTotal();
+                    document.getElementById('historial').innerHTML = "";
+                    localStorage.removeItem('totalCentimos');
+                    localStorage.removeItem('historial');
+                }
+            }
+            window.onload = function() {
+                cargarDatos();
+                actualizarTotal();
+                mostrarHistorial();
+            }
+        </script>
+    </body>
 </html>
